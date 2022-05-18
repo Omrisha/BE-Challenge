@@ -15,6 +15,18 @@ client.on('ready', () => {
 const cardsData = fs.readFileSync('./cards.json');
 const cards = JSON.parse(cardsData);
 
+function toHashMap (items) {
+    var map = new Map();
+
+    for (let index = 0; index < items.length; index++) {
+        const element = items[index];
+        
+        map.set(element.id, element.name);
+    }
+
+    return map;
+}
+
 async function getMissingCard(key) {
     const userCards = await client.zRange(key, 0, -1)
     let allCards = [...cards]
