@@ -13,9 +13,6 @@
   "author": "Moonactive",
   "license": "ISC",
   "dependencies": {
-    "@appsignal/express": "^1.0.30",
-    "@appsignal/nodejs": "^2.3.6",
-    "bloom-filters": "^3.0.0",
     "express": "^4.17.2",
     "redis": "^4.0.1"
   }
