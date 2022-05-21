@@ -1,5 +1,14 @@
+const { Appsignal } = require("@appsignal/nodejs");
+
+const appsignal = new Appsignal({
+  active: true,
+  name: "BE-Challenge"
+});
+
 const fs = require('fs');
 const express = require('express')
+const { expressMiddleware } = require("@appsignal/express");
+
 const app = express()
 const port = +process.argv[2] || 3000
 
@@ -11,6 +20,8 @@ client.on('ready', () => {
         console.log(`Example app listening at http://0.0.0.0:${port}`)
     })
 })
+
+app.use(expressMiddleware(appsignal));
 
 const cardsData = fs.readFileSync('./cards.json');
 const cards = JSON.parse(cardsData);
@@ -28,33 +39,23 @@ function toHashMap (items) {
 }
 
 async function getMissingCard(key) {
-    const userCards = await client.zRange(key, 0, -1)
-    let allCards = [...cards]
+    const currentCards = await client.incr(key)
+    if (currentCards > cards.length) {
+        return undefined;
+    }
 
-    userCards.forEach((userCard, idx) => {
-        allCards = allCards.filter(function (value, index, arr) {
-            return JSON.parse(userCard).id !== value.id;
-        })
-    })
-
-    return allCards.pop();
+    return cards[currentCards - 1];
 }
 
 app.get('/card_add', async (req, res) => {
     const  key = 'user_id:' + req.query.id
-    let missingCard = ''
-    while (true){
-        missingCard =await getMissingCard(key);
-        if(missingCard === undefined){
-            res.send({id: "ALL CARDS"})
-            return
-        }
-        result = await client.ZADD(key, {score: 0, value: JSON.stringify(missingCard)}, 'NX')
-        if(result === 0){
-            continue
-        }
-        break
+    const missingCard = await getMissingCard(key);
+
+    if(missingCard === undefined){
+        res.send({id: "ALL CARDS"})
+        return
     }
+    
     res.send(missingCard)
 })
 
